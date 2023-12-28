@@ -1,6 +1,8 @@
 # .github/workflows/test_action.yaml
 name: Test Action
-on: [push]
+on:
+  workflow_dispatch:
+  push:
 
 jobs:
   get-num-square:
@@ -8,13 +10,28 @@ jobs:
     name: Return's the number square
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Fetch num squared
-        id: get_square
-        uses: ./ # Uses an action in the root directory
-        # or use a released Github Action
-        # uses: shipyard/github-action/fetch-shipyard-env@1.0.0
+        uses: actions/checkout@v3
+      - uses: shahidhs-ibm/setup-python@ppc64le
         with:
-          num: 11
-      - name: Print the square
-        run: echo "${{ steps.get_square.outputs.num_squared }}"
+          python-version: '3.10'
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip python3-venv
+          if [ ! -f /usr/bin/python ]; then
+            sudo ln -s /usr/bin/python3 /usr/bin/python
+          fi
+          python3 --version
+          python --version
+          python3 my_script.py
+          pip3 --version
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+        shell: bash
+      - name: Pass Inputs to Shell
+        run: |
+          echo "INPUT_NUM=${{ inputs.num }}" >> $GITHUB_ENV
+        shell: bash
+      - name: Fetch the number's square
+        id: get-square
+        run: python src/get_num_square.py
+        shell: bash
